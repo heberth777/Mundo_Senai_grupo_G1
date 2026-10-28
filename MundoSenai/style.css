@@ -1,0 +1,118 @@
+        /* Custom Sci-fi Details & Overlays */
+        body {
+            background-color: #030712;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        /* Scanline Overlay Effect */
+        .scanline-overlay {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.3)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Sci-fi HUD Border Corners */
+        .hud-corner-tl {
+            clip-path: polygon(0 0, 20px 0, 20px 2px, 2px 2px, 2px 20px, 0 20px);
+        }
+        .hud-corner-tr {
+            clip-path: polygon(100% 0, calc(100% - 20px) 0, calc(100% - 20px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 20px, 100% 20px);
+        }
+        .hud-corner-bl {
+            clip-path: polygon(0 100%, 20px 100%, 20px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 20px), 0 calc(100% - 20px));
+        }
+        .hud-corner-br {
+            clip-path: polygon(100% 100%, calc(100% - 20px) 100%, calc(100% - 20px) calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) calc(100% - 20px), 100% calc(100% - 20px));
+        }
+
+        /* Sci-fi Custom Checkbox */
+        .cyber-checkbox {
+            appearance: none;
+            background-color: rgba(3, 7, 18, 0.8);
+            border: 2px solid #00f3ff;
+            border-radius: 4px;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .cyber-checkbox:checked {
+            background-color: #00f3ff;
+            box-shadow: 0 0 10px #00f3ff;
+        }
+        .cyber-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #030712;
+            font-weight: 900;
+            font-size: 14px;
+            top: -2px;
+            left: 3px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #030712;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00f3ff;
+            border-radius: 3px;
+            box-shadow: 0 0 10px #00f3ff;
+        }
+
+        /* Glowing text utils */
+        .glow-text-cyan {
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.7), 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+        .glow-text-purple {
+            text-shadow: 0 0 8px rgba(168, 85, 247, 0.7), 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Hologram Background Grid for Ticket */
+        .holo-grid {
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.08) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Printable styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            #bgCanvas, #hudHeader, #registrationCard, #toastContainer, .no-print {
+                display: none !important;
+            }
+            #boardingTicketContainer {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                color: black !important;
+            }
+            .ticket-card {
+                border: 2px solid #000 !important;
+                background: #fff !important;
+                color: #000 !important;
+                box-shadow: none !important;
+            }
+            .ticket-card * {
+                color: #000 !important;
+                text-shadow: none !important;
+            }
+        }
