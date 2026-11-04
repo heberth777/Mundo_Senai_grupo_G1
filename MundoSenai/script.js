@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         birthDate: false,
         address: false,
         hasHealthCondition: false,
-        healthDetails: true, // Defaults to true if "NÃ£o"
+        healthDetails: true, // Defaults to true if "Não"
         acceptTerms: false
       };
 
@@ -153,11 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const percentage = Math.round((validCount / total) * 100);
         progressBar.style.width = `${percentage}%`;
-        progressPercentage.textContent = `${percentage}% concluÃ­do`;
+        progressPercentage.textContent = `${percentage}% concluído`;
 
         if (percentage === 100) {
           progressStatusText.className = "text-emerald-400 font-bold flex items-center gap-1.5";
-          progressStatusText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Pronto para emissÃ£o!';
+          progressStatusText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Pronto para emissão!';
         } else {
           progressStatusText.className = "text-amber-400 font-bold flex items-center gap-1.5";
           progressStatusText.innerHTML = '<i class="fa-solid fa-pen-ruler"></i> Preenchendo dados...';
@@ -193,11 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const nameParts = val.split(/\s+/).filter(part => part.length > 0);
 
         if (val === '') {
-          setFieldStatus('fullName', false, 'O nome completo Ã© obrigatÃ³rio.');
+          setFieldStatus('fullName', false, 'O nome completo é obrigatório.');
           return false;
         }
         if (nameParts.length < 2) {
-          setFieldStatus('fullName', false, 'Por favor, insira sobrenome tambÃ©m.');
+          setFieldStatus('fullName', false, 'Por favor, insira sobrenome também.');
           return false;
         }
         if (val.length < 5) {
@@ -213,11 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
       function validateCPF() {
         const val = cpfInput.value.trim();
         if (val === '') {
-          setFieldStatus('cpf', false, 'O CPF Ã© obrigatÃ³rio.');
+          setFieldStatus('cpf', false, 'O CPF é obrigatório.');
           return false;
         }
         if (!isValidCPF(val)) {
-          setFieldStatus('cpf', false, 'CPF invÃ¡lido. Verifique os nÃºmeros digitados.');
+          setFieldStatus('cpf', false, 'CPF inválido. Verifique os números digitados.');
           return false;
         }
 
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
       function validateBirthDate() {
         const val = birthDateInput.value;
         if (!val) {
-          setFieldStatus('birthDate', false, 'A data de nascimento Ã© obrigatÃ³ria.');
+          setFieldStatus('birthDate', false, 'A data de nascimento é obrigatória.');
           return false;
         }
 
@@ -249,11 +249,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (age < 18) {
-          setFieldStatus('birthDate', false, 'Ã‰ necessÃ¡rio ter pelo menos 18 anos para se cadastrar.');
+          setFieldStatus('birthDate', false, 'É necessário ter pelo menos 18 anos para se cadastrar.');
           return false;
         }
         if (age > 110) {
-          setFieldStatus('birthDate', false, 'Por favor, informe uma data vÃ¡lida.');
+          setFieldStatus('birthDate', false, 'Por favor, informe uma data válida.');
           return false;
         }
 
@@ -265,11 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
       function validateAddress() {
         const val = addressInput.value.trim();
         if (val === '') {
-          setFieldStatus('address', false, 'O endereÃ§o completo Ã© obrigatÃ³rio.');
+          setFieldStatus('address', false, 'O endereço completo é obrigatório.');
           return false;
         }
         if (val.length < 10) {
-          setFieldStatus('address', false, 'Insira um endereÃ§o mais detalhado (mÃ­nimo 10 caracteres).');
+          setFieldStatus('address', false, 'Insira um endereço mais detalhado (mínimo 10 caracteres).');
           return false;
         }
 
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
           fieldsValid.hasHealthCondition = false;
           if (errorElem) {
             errorElem.classList.remove('hidden');
-            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Por favor, selecione uma das opÃ§Ãµes de saÃºde.`;
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Por favor, selecione uma das opções de saúde.`;
           }
           updateProgress();
           return false;
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
           healthDetailsInput.classList.add('border-rose-500');
           if (errorElem) {
             errorElem.classList.remove('hidden');
-            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Como vocÃª selecionou "Sim", descreva sua condiÃ§Ã£o mÃ©dica.`;
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Como você selecionou "Sim", descreva sua condição médica.`;
           }
           updateProgress();
           return false;
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
           healthDetailsInput.classList.add('border-rose-500');
           if (errorElem) {
             errorElem.classList.remove('hidden');
-            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> A descriÃ§Ã£o deve conter no mÃ­nimo 5 caracteres.`;
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> A descrição deve conter no mínimo 5 caracteres.`;
           }
           updateProgress();
           return false;
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isChecked) {
           if (errorElem) {
             errorElem.classList.remove('hidden');
-            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> VocÃª deve aceitar os Termos e PolÃ­ticas para prosseguir.`;
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Você deve aceitar os Termos e Políticas para prosseguir.`;
           }
           updateProgress();
           return false;
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
                          isHealthRadioValid && isHealthDetailsValid && isTermsValid;
 
         if (!allValid) {
-          showAlert('error', 'Por favor, corrija os erros destacadas no formulÃ¡rio antes de enviar.');
+          showAlert('error', 'Por favor, corrija os erros destacadas no formulário antes de enviar.');
           return;
         }
 
@@ -504,12 +504,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (selectedHealthRadio && selectedHealthRadio.value === 'sim') {
           ticketHealthBadge.className = "inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40";
-          ticketHealthBadge.innerHTML = '<i class="fa-solid fa-notes-medical"></i> Requer AtenÃ§Ã£o MÃ©dica';
+          ticketHealthBadge.innerHTML = '<i class="fa-solid fa-notes-medical"></i> Requer Atenção Médica';
           ticketHealthText.textContent = `Obs: "${healthDetailsInput.value.trim()}"`;
           ticketHealthText.classList.remove('hidden');
         } else {
           ticketHealthBadge.className = "inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-          ticketHealthBadge.innerHTML = '<i class="fa-solid fa-shield-heart"></i> Apto sem restriÃ§Ãµes';
+          ticketHealthBadge.innerHTML = '<i class="fa-solid fa-shield-heart"></i> Apto sem restrições';
           ticketHealthText.classList.add('hidden');
         }
 
