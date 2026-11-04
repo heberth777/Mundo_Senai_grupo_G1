@@ -1,633 +1,520 @@
-
-window.tailwind = window.tailwind || {};
 tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        orbitron: ['Orbitron', 'sans-serif'],
-                        rajdhani: ['Rajdhani', 'sans-serif'],
-                        mono: ['Share Tech Mono', 'monospace'],
-                    },
-                    colors: {
-                        quantum: {
-                            cyan: '#00f3ff',
-                            purple: '#a855f7',
-                            magenta: '#ff0055',
-                            dark: '#030712',
-                            panel: 'rgba(11, 19, 43, 0.75)',
-                            border: 'rgba(0, 243, 255, 0.3)'
-                        }
-                    },
-                    boxShadow: {
-                        'neon-cyan': '0 0 20px rgba(0, 243, 255, 0.4), inset 0 0 10px rgba(0, 243, 255, 0.2)',
-                        'neon-purple': '0 0 20px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(168, 85, 247, 0.2)',
-                        'neon-red': '0 0 20px rgba(255, 0, 85, 0.4), inset 0 0 10px rgba(255, 0, 85, 0.2)',
-                        'holo': '0 0 35px rgba(0, 243, 255, 0.25)',
-                    },
-                    animation: {
-                        'pulse-glow': 'pulseGlow 2s infinite alternate',
-                        'scanline': 'scanline 8s linear infinite',
-                        'glitch': 'glitch 1s infinite alternate',
-                        'holo-flicker': 'holoFlicker 3s infinite',
-                    },
-                    keyframes: {
-                        pulseGlow: {
-                            '0%': { boxShadow: '0 0 10px rgba(0,243,255,0.3)' },
-                            '100%': { boxShadow: '0 0 25px rgba(0,243,255,0.7), 0 0 5px rgba(168,85,247,0.5)' }
-                        },
-                        scanline: {
-                            '0%': { transform: 'translateY(-100%)' },
-                            '100%': { transform: 'translateY(1000%)' }
-                        },
-                        holoFlicker: {
-                            '0%, 100%': { opacity: 0.98 },
-                            '50%': { opacity: 0.92 },
-                            '52%': { opacity: 0.99 },
-                            '54%': { opacity: 0.88 },
-                            '80%': { opacity: 0.97 },
-                        }
-                    }
-                }
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+          },
+          colors: {
+            gold: {
+              300: '#fde047',
+              400: '#facc15',
+              500: '#eab308',
+              600: '#ca8a04',
+            },
+            expedition: {
+              dark: '#0B132B',
+              navy: '#1C2541',
+              accent: '#3A506B',
+              cyan: '#5BC0BE',
+              gold: '#D4AF37',
             }
+          }
         }
-
+      }
+    }
 
 document.addEventListener('DOMContentLoaded', () => {
-        /* ==========================================================================
-           1. AUDIO SYNTHESIZER (Web Audio API - Pure Code, No External Files)
-           ========================================================================== */
-        class QuantumAudio {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-            }
 
-            init() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioContext();
-                }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-            }
+      // DOM Elements
+      const form = document.getElementById('expedition-form');
+      const fullNameInput = document.getElementById('fullName');
+      const cpfInput = document.getElementById('cpf');
+      const birthDateInput = document.getElementById('birthDate');
+      const addressInput = document.getElementById('address');
+      const healthDetailsInput = document.getElementById('healthDetails');
+      const healthConditionContainer = document.getElementById('healthConditionContainer');
+      const acceptTermsCheckbox = document.getElementById('acceptTerms');
+      const submitBtn = document.getElementById('submit-btn');
 
-            playHover() {
-                if (!this.enabled) return;
-                this.init();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+      const progressBar = document.getElementById('progress-bar');
+      const progressPercentage = document.getElementById('progress-percentage');
+      const progressStatusText = document.getElementById('progress-status-text');
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.04);
+      const alertBanner = document.getElementById('alert-banner');
+      const alertIcon = document.getElementById('alert-icon');
+      const alertMessage = document.getElementById('alert-message');
 
-                gain.gain.setValueAtTime(0.03, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      const termsModal = document.getElementById('termsModal');
+      const btnOpenTerms = document.getElementById('btn-open-terms');
+      const btnCloseTerms = document.getElementById('btn-close-terms');
+      const btnAgreeModal = document.getElementById('btn-agree-modal');
 
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
+      const ticketModal = document.getElementById('ticketModal');
+      const btnCloseTicket = document.getElementById('btn-close-ticket');
+      const btnPrintTicket = document.getElementById('btn-print-ticket');
+      const btnNewRegistration = document.getElementById('btn-new-registration');
 
-                osc.start(now);
-                osc.stop(now + 0.04);
-            }
+      // State tracker
+      const fieldsValid = {
+        fullName: false,
+        cpf: false,
+        birthDate: false,
+        address: false,
+        hasHealthCondition: false,
+        healthDetails: true, // Defaults to true if "NÃ£o"
+        acceptTerms: false
+      };
 
-            playClick() {
-                if (!this.enabled) return;
-                this.init();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+      // --- OFFICIAL CPF CHECKSUM ALGORITHM (MODULO 11) ---
+      function isValidCPF(cpf) {
+        cpf = cpf.replace(/[^\d]+/g, '');
+        if (cpf.length !== 11) return false;
+        
+        // Eliminate known invalid repetition patterns
+        if (/^(\d)\1{10}$/.test(cpf)) return false;
 
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+        let add = 0;
+        for (let i = 0; i < 9; i++) {
+          add += parseInt(cpf.charAt(i)) * (10 - i);
+        }
+        let rev = 11 - (add % 11);
+        if (rev === 10 || rev === 11) rev = 0;
+        if (rev !== parseInt(cpf.charAt(9))) return false;
 
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        add = 0;
+        for (let i = 0; i < 10; i++) {
+          add += parseInt(cpf.charAt(i)) * (11 - i);
+        }
+        rev = 11 - (add % 11);
+        if (rev === 10 || rev === 11) rev = 0;
+        if (rev !== parseInt(cpf.charAt(10))) return false;
 
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
+        return true;
+      }
 
-                osc.start(now);
-                osc.stop(now + 0.08);
-            }
+      // Format CPF Mask live (000.000.000-00)
+      function maskCPF(value) {
+        let v = value.replace(/\D/g, '');
+        if (v.length > 11) v = v.substring(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        return v;
+      }
 
-            playError() {
-                if (!this.enabled) return;
-                this.init();
-                const now = this.ctx.currentTime;
-                
-                // Double sawtooth buzz
-                [0, 0.1].forEach(offset => {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
+      // Real-time Field UI Updater
+      function setFieldStatus(fieldId, isValid, errorMessage = '') {
+        const inputElem = document.getElementById(fieldId);
+        const errorElem = document.getElementById(`error-${fieldId}`);
+        const iconElem = document.getElementById(`icon-${fieldId}`);
 
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(140, now + offset);
-                    osc.frequency.linearRampToValueAtTime(90, now + offset + 0.08);
+        fieldsValid[fieldId] = isValid;
 
-                    gain.gain.setValueAtTime(0.12, now + offset);
-                    gain.gain.linearRampToValueAtTime(0.001, now + offset + 0.08);
-
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-
-                    osc.start(now + offset);
-                    osc.stop(now + offset + 0.08);
-                });
-            }
-
-            playWarpSuccess() {
-                if (!this.enabled) return;
-                this.init();
-                const now = this.ctx.currentTime;
-                const duration = 1.4;
-
-                // Frequency sweep oscillator
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, now);
-                osc.frequency.exponentialRampToValueAtTime(1800, now + duration);
-
-                gain.gain.setValueAtTime(0.01, now);
-                gain.gain.linearRampToValueAtTime(0.2, now + duration * 0.7);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-                // Filter
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(300, now);
-                filter.frequency.exponentialRampToValueAtTime(4000, now + duration);
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start(now);
-                osc.stop(now + duration);
-            }
+        if (inputElem) {
+          if (isValid) {
+            inputElem.classList.remove('border-rose-500', 'border-slate-700/80');
+            inputElem.classList.add('border-emerald-500');
+          } else {
+            inputElem.classList.remove('border-emerald-500', 'border-slate-700/80');
+            inputElem.classList.add('border-rose-500');
+          }
         }
 
-        const audioSys = new QuantumAudio();
-
-        /* ==========================================================================
-           2. STARFIELD BACKGROUND & HYPERDRIVE CANVAS ANIMATION
-           ========================================================================== */
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
-
-        let width, height;
-        let stars = [];
-        let isWarping = false;
-
-        function resizeCanvas() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+        if (iconElem) {
+          iconElem.classList.remove('opacity-0', 'fa-circle-check', 'text-emerald-400', 'fa-circle-exclamation', 'text-rose-400');
+          if (isValid) {
+            iconElem.classList.add('opacity-100', 'fa-circle-check', 'text-emerald-400');
+          } else {
+            iconElem.classList.add('opacity-100', 'fa-circle-exclamation', 'text-rose-400');
+          }
         }
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Star {
-            constructor() {
-                this.reset();
-            }
-
-            reset() {
-                this.x = (Math.random() - 0.5) * width * 2;
-                this.y = (Math.random() - 0.5) * height * 2;
-                this.z = Math.random() * width;
-                this.pz = this.z;
-                this.color = Math.random() > 0.3 ? '#00f3ff' : '#a855f7';
-            }
-
-            update(speed) {
-                this.pz = this.z;
-                this.z -= speed;
-                if (this.z <= 0) {
-                    this.reset();
-                    this.z = width;
-                    this.pz = this.z;
-                }
-            }
-
-            draw() {
-                const cx = width / 2;
-                const cy = height / 2;
-
-                const x = (this.x / this.z) * width + cx;
-                const y = (this.y / this.z) * height + cy;
-
-                if (x < 0 || x >= width || y < 0 || y >= height) return;
-
-                const px = (this.x / this.pz) * width + cx;
-                const py = (this.y / this.pz) * height + cy;
-
-                const r = (1 - this.z / width) * 2;
-
-                ctx.beginPath();
-                if (isWarping) {
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = r * 1.5;
-                    ctx.moveTo(px, py);
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = this.color;
-                    ctx.arc(x, y, Math.max(0.5, r), 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
+        if (errorElem) {
+          if (isValid) {
+            errorElem.classList.add('hidden');
+            errorElem.innerHTML = '';
+          } else {
+            errorElem.classList.remove('hidden');
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${errorMessage}`;
+          }
         }
 
-        for (let i = 0; i < 350; i++) {
-            stars.push(new Star());
+        updateProgress();
+      }
+
+      // Update Progress Bar
+      function updateProgress() {
+        const total = Object.keys(fieldsValid).length;
+        let validCount = 0;
+        for (let key in fieldsValid) {
+          if (fieldsValid[key]) validCount++;
         }
 
-        function animateStars() {
-            ctx.fillStyle = isWarping ? 'rgba(3, 7, 18, 0.25)' : '#030712';
-            ctx.fillRect(0, 0, width, height);
+        const percentage = Math.round((validCount / total) * 100);
+        progressBar.style.width = `${percentage}%`;
+        progressPercentage.textContent = `${percentage}% concluÃ­do`;
 
-            const speed = isWarping ? 45 : 1.2;
+        if (percentage === 100) {
+          progressStatusText.className = "text-emerald-400 font-bold flex items-center gap-1.5";
+          progressStatusText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Pronto para emissÃ£o!';
+        } else {
+          progressStatusText.className = "text-amber-400 font-bold flex items-center gap-1.5";
+          progressStatusText.innerHTML = '<i class="fa-solid fa-pen-ruler"></i> Preenchendo dados...';
+        }
+      }
 
-            stars.forEach(star => {
-                star.update(speed);
-                star.draw();
-            });
+      // Display Top Alert
+      function showAlert(type, message) {
+        alertBanner.classList.remove('hidden', 'bg-rose-500/10', 'border-rose-500/30', 'text-rose-300', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+        alertIcon.classList.remove('fa-triangle-exclamation', 'text-rose-400', 'fa-circle-check', 'text-emerald-400');
 
-            requestAnimationFrame(animateStars);
+        if (type === 'error') {
+          alertBanner.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+          alertIcon.classList.add('fa-triangle-exclamation', 'text-rose-400');
+        } else {
+          alertBanner.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+          alertIcon.classList.add('fa-circle-check', 'text-emerald-400');
         }
 
-        animateStars();
+        alertMessage.textContent = message;
+        alertBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
 
-        /* ==========================================================================
-           3. FORM MASKING & CPF ALGORITHM VALIDATION
-           ========================================================================== */
-        const cpfInput = document.getElementById('cpf');
-        const cpfStatus = document.getElementById('cpfStatus');
+      function hideAlert() {
+        alertBanner.classList.add('hidden');
+      }
 
-        // Apply CPF Mask (XXX.XXX.XXX-XX)
-        cpfInput.addEventListener('input', (e) => {
-            let v = e.target.value.replace(/\D/g, '');
-            if (v.length > 11) v = v.slice(0, 11);
+      // --- INDIVIDUAL FIELD VALIDATORS ---
 
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      // Full Name Validation
+      function validateFullName() {
+        const val = fullNameInput.value.trim();
+        const nameParts = val.split(/\s+/).filter(part => part.length > 0);
 
-            e.target.value = v;
+        if (val === '') {
+          setFieldStatus('fullName', false, 'O nome completo Ã© obrigatÃ³rio.');
+          return false;
+        }
+        if (nameParts.length < 2) {
+          setFieldStatus('fullName', false, 'Por favor, insira sobrenome tambÃ©m.');
+          return false;
+        }
+        if (val.length < 5) {
+          setFieldStatus('fullName', false, 'O nome deve ter pelo menos 5 caracteres.');
+          return false;
+        }
 
-            // Visual feedback
-            if (v.length === 14) {
-                if (validateCPF(v)) {
-                    cpfStatus.textContent = "VALIDADO";
-                    cpfStatus.className = "absolute right-3 top-3 text-xs font-mono text-emerald-400 font-bold";
-                } else {
-                    cpfStatus.textContent = "INVÁLIDO";
-                    cpfStatus.className = "absolute right-3 top-3 text-xs font-mono text-quantum-magenta font-bold";
-                }
-            } else {
-                cpfStatus.textContent = "MÁSCARA";
-                cpfStatus.className = "absolute right-3 top-3 text-xs font-mono text-slate-500";
-            }
+        setFieldStatus('fullName', true);
+        return true;
+      }
+
+      // CPF Validation
+      function validateCPF() {
+        const val = cpfInput.value.trim();
+        if (val === '') {
+          setFieldStatus('cpf', false, 'O CPF Ã© obrigatÃ³rio.');
+          return false;
+        }
+        if (!isValidCPF(val)) {
+          setFieldStatus('cpf', false, 'CPF invÃ¡lido. Verifique os nÃºmeros digitados.');
+          return false;
+        }
+
+        setFieldStatus('cpf', true);
+        return true;
+      }
+
+      // Birth Date Validation
+      function validateBirthDate() {
+        const val = birthDateInput.value;
+        if (!val) {
+          setFieldStatus('birthDate', false, 'A data de nascimento Ã© obrigatÃ³ria.');
+          return false;
+        }
+
+        const birthDate = new Date(val);
+        const today = new Date();
+        
+        if (birthDate >= today) {
+          setFieldStatus('birthDate', false, 'A data deve ser no passado.');
+          return false;
+        }
+
+        // Calculate Age
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+
+        if (age < 18) {
+          setFieldStatus('birthDate', false, 'Ã‰ necessÃ¡rio ter pelo menos 18 anos para se cadastrar.');
+          return false;
+        }
+        if (age > 110) {
+          setFieldStatus('birthDate', false, 'Por favor, informe uma data vÃ¡lida.');
+          return false;
+        }
+
+        setFieldStatus('birthDate', true);
+        return true;
+      }
+
+      // Address Validation
+      function validateAddress() {
+        const val = addressInput.value.trim();
+        if (val === '') {
+          setFieldStatus('address', false, 'O endereÃ§o completo Ã© obrigatÃ³rio.');
+          return false;
+        }
+        if (val.length < 10) {
+          setFieldStatus('address', false, 'Insira um endereÃ§o mais detalhado (mÃ­nimo 10 caracteres).');
+          return false;
+        }
+
+        setFieldStatus('address', true);
+        return true;
+      }
+
+      // Health Radio Validation
+      function validateHealthRadio() {
+        const selectedRadio = document.querySelector('input[name="hasHealthCondition"]:checked');
+        const errorElem = document.getElementById('error-hasHealthCondition');
+
+        if (!selectedRadio) {
+          fieldsValid.hasHealthCondition = false;
+          if (errorElem) {
+            errorElem.classList.remove('hidden');
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Por favor, selecione uma das opÃ§Ãµes de saÃºde.`;
+          }
+          updateProgress();
+          return false;
+        }
+
+        fieldsValid.hasHealthCondition = true;
+        if (errorElem) errorElem.classList.add('hidden');
+
+        if (selectedRadio.value === 'sim') {
+          healthConditionContainer.classList.remove('hidden');
+          validateHealthDetails();
+        } else {
+          healthConditionContainer.classList.add('hidden');
+          fieldsValid.healthDetails = true; // Not required
+          const healthError = document.getElementById('error-healthDetails');
+          if (healthError) healthError.classList.add('hidden');
+        }
+
+        updateProgress();
+        return true;
+      }
+
+      // Health Details Validation
+      function validateHealthDetails() {
+        const selectedRadio = document.querySelector('input[name="hasHealthCondition"]:checked');
+        if (!selectedRadio || selectedRadio.value !== 'sim') {
+          fieldsValid.healthDetails = true;
+          return true;
+        }
+
+        const val = healthDetailsInput.value.trim();
+        const errorElem = document.getElementById('error-healthDetails');
+
+        if (val === '') {
+          fieldsValid.healthDetails = false;
+          healthDetailsInput.classList.remove('border-emerald-500');
+          healthDetailsInput.classList.add('border-rose-500');
+          if (errorElem) {
+            errorElem.classList.remove('hidden');
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Como vocÃª selecionou "Sim", descreva sua condiÃ§Ã£o mÃ©dica.`;
+          }
+          updateProgress();
+          return false;
+        }
+
+        if (val.length < 5) {
+          fieldsValid.healthDetails = false;
+          healthDetailsInput.classList.remove('border-emerald-500');
+          healthDetailsInput.classList.add('border-rose-500');
+          if (errorElem) {
+            errorElem.classList.remove('hidden');
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> A descriÃ§Ã£o deve conter no mÃ­nimo 5 caracteres.`;
+          }
+          updateProgress();
+          return false;
+        }
+
+        fieldsValid.healthDetails = true;
+        healthDetailsInput.classList.remove('border-rose-500');
+        healthDetailsInput.classList.add('border-emerald-500');
+        if (errorElem) errorElem.classList.add('hidden');
+
+        updateProgress();
+        return true;
+      }
+
+      // Terms Checkbox Validation
+      function validateTerms() {
+        const isChecked = acceptTermsCheckbox.checked;
+        const errorElem = document.getElementById('error-acceptTerms');
+
+        fieldsValid.acceptTerms = isChecked;
+
+        if (!isChecked) {
+          if (errorElem) {
+            errorElem.classList.remove('hidden');
+            errorElem.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> VocÃª deve aceitar os Termos e PolÃ­ticas para prosseguir.`;
+          }
+          updateProgress();
+          return false;
+        }
+
+        if (errorElem) errorElem.classList.add('hidden');
+        updateProgress();
+        return true;
+      }
+
+      // --- EVENT LISTENERS FOR REAL-TIME MONITORING ---
+
+      // Full Name Input
+      fullNameInput.addEventListener('input', validateFullName);
+      fullNameInput.addEventListener('blur', validateFullName);
+
+      // CPF Input & Masking
+      cpfInput.addEventListener('input', (e) => {
+        e.target.value = maskCPF(e.target.value);
+        validateCPF();
+      });
+      cpfInput.addEventListener('blur', validateCPF);
+
+      // Birth Date Input
+      birthDateInput.addEventListener('change', validateBirthDate);
+      birthDateInput.addEventListener('blur', validateBirthDate);
+
+      // Address Input
+      addressInput.addEventListener('input', validateAddress);
+      addressInput.addEventListener('blur', validateAddress);
+
+      // Health Radio Change
+      document.querySelectorAll('input[name="hasHealthCondition"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          hideAlert();
+          validateHealthRadio();
+        });
+      });
+
+      // Health Details Textarea
+      healthDetailsInput.addEventListener('input', validateHealthDetails);
+      healthDetailsInput.addEventListener('blur', validateHealthDetails);
+
+      // Terms Checkbox Change
+      acceptTermsCheckbox.addEventListener('change', validateTerms);
+
+      // --- MODAL CONTROLS ---
+
+      btnOpenTerms.addEventListener('click', () => {
+        termsModal.classList.remove('hidden');
+      });
+
+      btnCloseTerms.addEventListener('click', () => {
+        termsModal.classList.add('hidden');
+      });
+
+      btnAgreeModal.addEventListener('click', () => {
+        acceptTermsCheckbox.checked = true;
+        validateTerms();
+        termsModal.classList.add('hidden');
+      });
+
+      btnCloseTicket.addEventListener('click', () => {
+        ticketModal.classList.add('hidden');
+      });
+
+      btnPrintTicket.addEventListener('click', () => {
+        window.print();
+      });
+
+      btnNewRegistration.addEventListener('click', () => {
+        ticketModal.classList.add('hidden');
+        form.reset();
+        healthConditionContainer.classList.add('hidden');
+        
+        // Reset state
+        Object.keys(fieldsValid).forEach(k => fieldsValid[k] = false);
+        fieldsValid.healthDetails = true;
+
+        // Reset inputs border and icons
+        ['fullName', 'cpf', 'birthDate', 'address'].forEach(id => {
+          const elem = document.getElementById(id);
+          if (elem) elem.className = "w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all";
+          const icon = document.getElementById(`icon-${id}`);
+          if (icon) icon.className = "fa-solid text-xs opacity-0 transition-opacity";
+          const err = document.getElementById(`error-${id}`);
+          if (err) err.classList.add('hidden');
         });
 
-        // Strict CPF Math Validation
-        function validateCPF(cpf) {
-            const cleanCPF = cpf.replace(/\D/g, '');
-            if (cleanCPF.length !== 11) return false;
-            if (/^(\d)\1{10}$/.test(cleanCPF)) return false; // Block same digits like 111.111.111-11
+        hideAlert();
+        updateProgress();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
 
-            let sum = 0;
-            let remainder;
+      // --- FORM SUBMISSION HANDLER ---
 
-            for (let i = 1; i <= 9; i++) {
-                sum += parseInt(cleanCPF.substring(i - 1, i)) * (11 - i);
-            }
-            remainder = (sum * 10) % 11;
-            if (remainder === 10 || remainder === 11) remainder = 0;
-            if (remainder !== parseInt(cleanCPF.substring(9, 10))) return false;
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
 
-            sum = 0;
-            for (let i = 1; i <= 10; i++) {
-                sum += parseInt(cleanCPF.substring(i - 1, i)) * (12 - i);
-            }
-            remainder = (sum * 10) % 11;
-            if (remainder === 10 || remainder === 11) remainder = 0;
-            if (remainder !== parseInt(cleanCPF.substring(10, 11))) return false;
+        // Run all validations on submit attempt
+        const isNameValid = validateFullName();
+        const isCpfValid = validateCPF();
+        const isBirthValid = validateBirthDate();
+        const isAddressValid = validateAddress();
+        const isHealthRadioValid = validateHealthRadio();
+        const isHealthDetailsValid = validateHealthDetails();
+        const isTermsValid = validateTerms();
 
-            return true;
+        const allValid = isNameValid && isCpfValid && isBirthValid && isAddressValid && 
+                         isHealthRadioValid && isHealthDetailsValid && isTermsValid;
+
+        if (!allValid) {
+          showAlert('error', 'Por favor, corrija os erros destacadas no formulÃ¡rio antes de enviar.');
+          return;
         }
 
-        /* ==========================================================================
-           4. DYNAMIC MEDICAL CONDITION TOGGLE
-           ========================================================================== */
-        const healthRadios = document.querySelectorAll('input[name="healthCondition"]');
-        const healthWrapper = document.getElementById('healthDetailsWrapper');
-        const healthDetailsInput = document.getElementById('healthDetails');
+        // Hide errors banner
+        hideAlert();
 
-        healthRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                audioSys.playClick();
-                if (e.target.value === 'yes') {
-                    healthWrapper.classList.remove('hidden');
-                    healthDetailsInput.setAttribute('required', 'true');
-                } else {
-                    healthWrapper.classList.add('hidden');
-                    healthDetailsInput.removeAttribute('required');
-                    healthDetailsInput.value = '';
-                }
-            });
-        });
+        // Generate Ticket Details
+        document.getElementById('ticket-name').textContent = fullNameInput.value.trim();
+        document.getElementById('ticket-cpf').textContent = cpfInput.value.trim();
+        
+        // Format Birth Date BR Format
+        const birthDateObj = new Date(birthDateInput.value + 'T00:00:00');
+        document.getElementById('ticket-birth').textContent = birthDateObj.toLocaleDateString('pt-BR');
+        
+        document.getElementById('ticket-address').textContent = addressInput.value.trim();
 
-        /* ==========================================================================
-           5. HUD TOAST NOTIFICATION SYSTEM (Replaces alert())
-           ========================================================================== */
-        function showToast(title, message, type = 'error') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
+        // Ticket Random Code
+        const randomCode = 'EUR-2026-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        document.getElementById('ticket-code').textContent = randomCode;
 
-            const isError = type === 'error';
-            const borderColor = isError ? 'border-quantum-magenta' : 'border-quantum-cyan';
-            const glowClass = isError ? 'shadow-neon-red' : 'shadow-neon-cyan';
-            const textColor = isError ? 'text-quantum-magenta' : 'text-quantum-cyan';
+        // Medical Status Badge in Ticket
+        const selectedHealthRadio = document.querySelector('input[name="hasHealthCondition"]:checked');
+        const ticketHealthBadge = document.getElementById('ticket-health-badge');
+        const ticketHealthText = document.getElementById('ticket-health-text');
 
-            toast.className = `pointer-events-auto w-full bg-slate-950/95 backdrop-blur-xl border ${borderColor} rounded-xl p-4 ${glowClass} transition-all duration-300 transform translate-x-10 opacity-0 flex items-start space-x-3`;
-
-            toast.innerHTML = `
-                <div class="shrink-0 mt-0.5">
-                    ${isError ? `
-                        <svg class="w-5 h-5 text-quantum-magenta" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    ` : `
-                        <svg class="w-5 h-5 text-quantum-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    `}
-                </div>
-                <div class="flex-1">
-                    <h4 class="font-orbitron font-bold text-xs uppercase tracking-wider ${textColor}">${title}</h4>
-                    <p class="font-rajdhani text-sm text-slate-300 mt-0.5">${message}</p>
-                </div>
-            `;
-
-            toastContainer.appendChild(toast);
-
-            // Animate in
-            setTimeout(() => {
-                toast.classList.remove('translate-x-10', 'opacity-0');
-            }, 10);
-
-            // Audio queue
-            if (isError) audioSys.playError();
-            else audioSys.playClick();
-
-            // Auto dismiss
-            setTimeout(() => {
-                toast.classList.add('translate-x-10', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 4500);
+        if (selectedHealthRadio && selectedHealthRadio.value === 'sim') {
+          ticketHealthBadge.className = "inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40";
+          ticketHealthBadge.innerHTML = '<i class="fa-solid fa-notes-medical"></i> Requer AtenÃ§Ã£o MÃ©dica';
+          ticketHealthText.textContent = `Obs: "${healthDetailsInput.value.trim()}"`;
+          ticketHealthText.classList.remove('hidden');
+        } else {
+          ticketHealthBadge.className = "inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+          ticketHealthBadge.innerHTML = '<i class="fa-solid fa-shield-heart"></i> Apto sem restriÃ§Ãµes';
+          ticketHealthText.classList.add('hidden');
         }
 
-        /* ==========================================================================
-           6. PROCEDURAL QUANTUM CANVAS DRAWING (QR & BARCODE)
-           ========================================================================== */
-        function drawQuantumQR(canvasId, seedText) {
-            const qrCanvas = document.getElementById(canvasId);
-            const qctx = qrCanvas.getContext('2d');
-            const size = qrCanvas.width;
-            
-            qctx.clearRect(0, 0, size, size);
-            qctx.fillStyle = '#030712';
-            qctx.fillRect(0, 0, size, size);
+        // Display Ticket Modal
+        ticketModal.classList.remove('hidden');
+      });
 
-            const gridCount = 15;
-            const cellSize = size / gridCount;
-
-            // Simple pseudo-random generator based on seed string
-            let hash = 0;
-            for (let i = 0; i < seedText.length; i++) {
-                hash = seedText.charCodeAt(i) + ((hash << 5) - hash);
-            }
-
-            // Draw matrix dots
-            qctx.fillStyle = '#00f3ff';
-            for (let r = 0; r < gridCount; r++) {
-                for (let c = 0; c < gridCount; c++) {
-                    // Skip corners for position markers
-                    if ((r < 4 && c < 4) || (r < 4 && c > gridCount - 5) || (r > gridCount - 5 && c < 4)) continue;
-                    
-                    const val = Math.sin(hash * (r + 1) * (c + 1));
-                    if (val > 0) {
-                        qctx.fillRect(c * cellSize + 1, r * cellSize + 1, cellSize - 2, cellSize - 2);
-                    }
-                }
-            }
-
-            // Draw Position Detection Squares (Corners)
-            const drawCornerSquare = (row, col) => {
-                const x = col * cellSize;
-                const y = row * cellSize;
-                const w = 4 * cellSize;
-                
-                qctx.strokeStyle = '#00f3ff';
-                qctx.lineWidth = 2;
-                qctx.strokeRect(x + 2, y + 2, w - 4, w - 4);
-                
-                qctx.fillStyle = '#a855f7';
-                qctx.fillRect(x + cellSize, y + cellSize, cellSize * 2, cellSize * 2);
-            };
-
-            drawCornerSquare(0, 0);
-            drawCornerSquare(0, gridCount - 4);
-            drawCornerSquare(gridCount - 4, 0);
-        }
-
-        function drawQuantumBarcode(canvasId, codeText) {
-            const bcanvas = document.getElementById(canvasId);
-            const bctx = bcanvas.getContext('2d');
-            const w = bcanvas.width;
-            const h = bcanvas.height;
-
-            bctx.clearRect(0, 0, w, h);
-            bctx.fillStyle = '#00f3ff';
-
-            let x = 0;
-            while (x < w) {
-                const barWidth = Math.floor(Math.random() * 4) + 1;
-                const gap = Math.floor(Math.random() * 3) + 1;
-                bctx.fillRect(x, 0, barWidth, h);
-                x += barWidth + gap;
-            }
-        }
-
-        /* ==========================================================================
-           7. FORM SUBMISSION & VALIDATION
-           ========================================================================== */
-        const quantumForm = document.getElementById('quantumForm');
-        const submitBtn = document.getElementById('submitBtn');
-
-        quantumForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            // Fetch inputs
-            const fullName = document.getElementById('fullName').value.trim();
-            const cpf = document.getElementById('cpf').value.trim();
-            const birthDate = document.getElementById('birthDate').value;
-            const address = document.getElementById('address').value.trim();
-            const destination = document.getElementById('destination').value;
-            const healthChoice = document.querySelector('input[name="healthCondition"]:checked').value;
-            const healthDetails = document.getElementById('healthDetails').value.trim();
-            const termsChecked = document.getElementById('termsCheckbox').checked;
-
-            // 1. Mandatory Field Checks
-            if (!fullName || !cpf || !birthDate || !address || !destination) {
-                showToast("DADOS INCOMPLETOS", "Preencha todos os campos obrigatórios do formulário.");
-                return;
-            }
-
-            // 2. CPF Validation
-            if (!validateCPF(cpf)) {
-                showToast("CPF INVÁLIDO", "O número de CPF informado é inválido perante os registros terrestres.");
-                return;
-            }
-
-            // 3. Conditional Health Details Validation
-            if (healthChoice === 'yes' && !healthDetails) {
-                showToast("ALERTA MÉDICO", "Especifique os detalhes da sua condição física/biológica.");
-                return;
-            }
-
-            // 4. Terms and Policy Checkbox
-            if (!termsChecked) {
-                showToast("TERMOS DE SEGURANÇA", "Você deve aceitar os Termos e Políticas Médicas de Salto Quântico.");
-                return;
-            }
-
-            // Successful Submission Handling
-            audioSys.playWarpSuccess();
-            isWarping = true; // Trigger hyperdrive star animation
-
-            // Disable button feedback
-            submitBtn.disabled = true;
-            document.getElementById('btnText').textContent = "PROCESSANDO EMBARQUE QUÂNTICO...";
-
-            setTimeout(() => {
-                isWarping = false;
-                
-                // Hide Form, Show Hologram Boarding Ticket
-                document.getElementById('registrationCard').classList.add('hidden');
-                const ticketContainer = document.getElementById('boardingTicketContainer');
-                ticketContainer.classList.remove('hidden');
-
-                // Populate Ticket Data
-                document.getElementById('ticketPassengerName').textContent = fullName;
-                document.getElementById('ticketCpf').textContent = cpf;
-                
-                // Format Birthdate
-                const dateObj = new Date(birthDate);
-                document.getElementById('ticketBirth').textContent = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-                
-                document.getElementById('ticketAddress').textContent = address;
-                document.getElementById('ticketDestination').textContent = destination;
-
-                // Health status text
-                const healthStatusElem = document.getElementById('ticketHealthStatus');
-                if (healthChoice === 'yes') {
-                    healthStatusElem.textContent = "CONDIÇÃO REGISTRADA: " + healthDetails.substring(0, 25) + "...";
-                    healthStatusElem.className = "font-mono font-bold text-xs text-quantum-magenta";
-                } else {
-                    healthStatusElem.textContent = "NOMINAL (SEM RESTRICOES)";
-                    healthStatusElem.className = "font-mono font-bold text-xs text-emerald-400";
-                }
-
-                // Booking ID & Hashes
-                const randomId = Math.floor(1000 + Math.random() * 9000);
-                const bookingCode = `#AQD-${randomId}`;
-                document.getElementById('ticketBookingId').textContent = bookingCode;
-                
-                const hash = `AETH-${Math.random().toString(36).substring(2, 8).toUpperCase()}-X9`;
-                document.getElementById('ticketHash').textContent = hash;
-
-                // Render Canvas Elements
-                drawQuantumQR('qrCanvas', `${fullName}|${cpf}|${bookingCode}|${destination}`);
-                drawQuantumBarcode('barcodeCanvas', hash);
-
-                // Scroll to top smoothly
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-
-                showToast("AUTORIZAÇÃO CONCEDIDA", "Passagem interdimensional gerada com sucesso! Bom salto.", "success");
-            }, 1500);
-        });
-
-        /* ==========================================================================
-           8. UX EVENT LISTENERS (Audio & Interactions)
-           ========================================================================== */
-        // Audio Toggle Button
-        const audioToggleBtn = document.getElementById('audioToggle');
-        const audioIconOn = document.getElementById('audioIconOn');
-        const audioIconOff = document.getElementById('audioIconOff');
-
-        audioToggleBtn.addEventListener('click', () => {
-            audioSys.enabled = !audioSys.enabled;
-            if (audioSys.enabled) {
-                audioIconOn.classList.remove('hidden');
-                audioIconOff.classList.add('hidden');
-                audioSys.playClick();
-            } else {
-                audioIconOn.classList.add('hidden');
-                audioIconOff.classList.remove('hidden');
-            }
-        });
-
-        // Add Hover sounds to all interactive elements
-        document.querySelectorAll('input, select, button, label').forEach(el => {
-            el.addEventListener('mouseenter', () => audioSys.playHover());
-        });
-
-        // Stardate Clock Generator
-        function updateStardate() {
-            const now = new Date();
-            const startYear = now.getFullYear();
-            const dayOfYear = Math.floor((now - new Date(startYear, 0, 0)) / 1000 / 60 / 60 / 24);
-            const stardate = `ST-${startYear}.${dayOfYear}`;
-            document.getElementById('stardateClock').textContent = stardate;
-        }
-        updateStardate();
-
-        // Register Another Passenger Button
-        document.getElementById('newRegistrationBtn').addEventListener('click', () => {
-            audioSys.playClick();
-            document.getElementById('boardingTicketContainer').classList.add('hidden');
-            document.getElementById('registrationCard').classList.remove('hidden');
-            quantumForm.reset();
-            
-            // Reset state
-            submitBtn.disabled = false;
-            document.getElementById('btnText').textContent = "EFETUAR CADASTRO E GERAR BILHETE";
-            cpfStatus.textContent = "MÁSCARA";
-            cpfStatus.className = "absolute right-3 top-3 text-xs font-mono text-slate-500";
-            healthWrapper.classList.add('hidden');
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        // Print Ticket Action
-        document.getElementById('printTicketBtn').addEventListener('click', () => {
-            audioSys.playClick();
-            window.print();
-        });
-
-        // Logo Click Easter Egg
-        document.getElementById('logoBtn').addEventListener('click', () => {
-            audioSys.playClick();
-            showToast("AETHERIA SYSTEM", "Portal quântico conectado à fenda temporal Alpha-9.", "success");
-        });
-
-});
+    });
